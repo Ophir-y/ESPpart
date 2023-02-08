@@ -5,8 +5,7 @@
 #define PN532_SCK  (18)
 #define PN532_MISO (19)
 #define PN532_MOSI (23)
-#define PN532_SS   (4
-)
+#define PN532_SS   (4)
 
 const char* ssid = "project_wifi";
 const char* password = "12345678";
