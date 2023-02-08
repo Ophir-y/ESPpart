@@ -16,9 +16,9 @@ String idcard;
 
 
 void setup(){
-    Serial.begin(9600);
+    Serial.begin(115200);
     delay(1000);
-    WifiConnect("project_wifi","12345678");
+    WifiConnect(ssid,password);
 // connect to PN532 via SPI
     nfc.begin();
     delay(1000);
