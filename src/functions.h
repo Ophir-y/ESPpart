@@ -17,13 +17,13 @@ extern String url_client;
 extern const char *ssid;
 extern const char *password;
 extern String port;
-extern const char *id;
+extern uint64_t chipid;
 
 void WifiConnect(const char *ssid, const char *password);
 
 void IRAM_ATTR onWiFiEvent(WiFiEvent_t event);
 
-void sendGETRequest();
+void sendGETList();
 
 void sendPOSTRequest();
 

@@ -13,6 +13,7 @@ Ticker postTicker;
 void setup()
 {
   Serial.begin(115200);
+  Serial.printf("ESP32 Chip ID: %04X%08X\n", (uint16_t)(chipid >> 32), (uint32_t)chipid); // print the chip ID
   WiFi.onEvent(onWiFiEvent);
   WifiConnect(ssid, password);
   // Wait for the connection to be established
@@ -42,7 +43,7 @@ void setup()
   // start http
   // ##################################################################
   // Set up the interrupt for the GET request
-  getTicker.attach(10, sendGETRequest); // 30 seconds
+  getTicker.attach(20, sendGETList); // 60 seconds
 
   // Set up the interrupt for the POST request
   postTicker.attach(1800, sendPOSTRequest); // 3 minutes
