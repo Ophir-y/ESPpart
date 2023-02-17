@@ -13,7 +13,10 @@ Ticker postTicker;
 void setup()
 {
   Serial.begin(115200);
-  Serial.printf("ESP32 Chip ID: %04X%08X\n", (uint16_t)(chipid >> 32), (uint32_t)chipid); // print the chip ID
+  String chipids = String(chipid);
+  Serial.printf("ESP32 Chip ID In DEC: ");
+  Serial.println(chipids);                                                                       // print the chip ID
+  Serial.printf("ESP32 Chip ID In HEX: %04X%08X\n", (uint16_t)(chipid >> 32), (uint32_t)chipid); // print the chip ID
   WiFi.onEvent(onWiFiEvent);
   WifiConnect(ssid, password);
   // Wait for the connection to be established

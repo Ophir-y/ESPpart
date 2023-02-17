@@ -90,11 +90,6 @@ void sendGETList()
             Serial.print("\nID Number: ");
             Serial.println(person_id);
         }
-
-        // Access the properties of the JSON object
-        // Request was successful
-        String payload = http.getString();
-        Serial.println(payload);
     }
     else if (httpCode == 404)
     {
