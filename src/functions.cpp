@@ -82,7 +82,7 @@ void sendGETList()
 
     if (httpCode == 200){
         String response = http.getString();
-        Serial.println("Response: " + response);
+        // Serial.println("Response: " + response);
         DynamicJsonDocument doc(1024);
          deserializeJson(doc, response);
 

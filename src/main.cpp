@@ -54,12 +54,9 @@ void setup()
   // Set up the interrupt for the POST request
   postTicker.attach(1800, sendPOSTRequest); // 3 minutes
 
-  // get the real time
-  configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
-
   // // Initialize SPIFFS
   // if (!SPIFFS.begin()) {
-  //   Serial.println("Failed to mount file system 123");
+  //   Serial.println("Failed to mount file system");
   //   return;
   // }
 
@@ -83,6 +80,7 @@ void setup()
   //   return;
   // }
 
+  // get the real time
   SendGetTime();
 
 }
