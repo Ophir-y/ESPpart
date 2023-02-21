@@ -54,18 +54,18 @@ void setup()
   // Set up the interrupt for the POST request
   postTicker.attach(1800, sendPOSTRequest); // 3 minutes
 
-  // // Initialize SPIFFS
-  // if (!SPIFFS.begin()) {
-  //   Serial.println("Failed to mount file system");
-  //   return;
-  // }
+  // Initialize SPIFFS
+  if (!SPIFFS.begin(true)) {
+    Serial.println("Failed to mount file system");
+    return;
+  }
 
-  // // Create a new file
-  // File file = SPIFFS.open("/list_data.txt", FILE_WRITE);
-  // if(!file){
-  //   Serial.println("Failed to create file");
-  //   return;
-  // }
+  // Create a new file
+  File file = SPIFFS.open("/list_data.txt", FILE_WRITE);
+  if(!file){
+    Serial.println("Failed to create file");
+    return;
+  }
 
   //   // initialize SD card
   // if (!SD.begin()) {
@@ -99,20 +99,20 @@ void loop()
     for (byte i = 0; i <= uidLength - 1; i++)
     {
       idcard += (uid[i] < 0x10 ? "0" : "") +
-                String(uid[i], HEX);
+                String(uid[i], DEC);
     }
     Serial.print("ID CARD in HEX : ");
     Serial.println(idcard);
     // compare with saved data
-    // if (isIdAllowed(idcard)) {
-    //   Serial.println("Access granted");
-    //   // add code here to grant access
-    // }
-    // else{
-    //   Serial.println("Access denai");
-    // }
+    if (isIdAllowed(idcard)) {
+      Serial.println("Access granted");
+      // add code here to grant access
+    }
+    else{
+      Serial.println("Access denai");
+    }
   }
-   time_t now = time(NULL);
+  time_t now = time(NULL);
   Serial.println(ctime(&now));
   
   delay(1000);

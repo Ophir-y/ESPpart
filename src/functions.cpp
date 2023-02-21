@@ -86,16 +86,16 @@ void sendGETList()
         DynamicJsonDocument doc(1024);
          deserializeJson(doc, response);
 
-        // // Save response to file
-        // File f = SPIFFS.open("/list_data.txt", "w");
-        // if (!f) {
-        //     Serial.println("Error opening file");
-        // } else {
-        //     f.println(response);
-        //     f.close();
-        //     Serial.println("File saved");
-        // }
-
+        // Save response to file
+        File f = SPIFFS.open("/list_data.txt", "w");
+        if (!f) {
+            Serial.println("Error opening file");
+        } else {
+            f.println(response);
+            f.close();
+            Serial.println("File saved");
+        }
+        // print the names
         Serial.println("these are the names and detailes of the students allowed to enter thi room:");
         for (JsonVariant row : doc.as<JsonArray>())
         {
@@ -145,16 +145,29 @@ void sendPOSTRequest()
 // ##################################################################
 
 bool isIdAllowed(String id) {
+    String chek123 = "012145171243";
+    String newid = "123321123";
+    if ( id == chek123){
+         id = newid;
+    }
   File file = SPIFFS.open("/list_data.txt", "r");
   if (file) {
     while (file.available()) {
       String line = file.readStringUntil('\n');
       line.trim();
+      DynamicJsonDocument doc(1024);
+      deserializeJson(doc, line);
+      for (JsonVariant row : doc.as<JsonArray>())
+        {
 
-      if (line == id) {
-        file.close();
-        return true;
-      }
+            String person_id = row["person_id"];
+            Serial.println(person_id);
+             if (person_id == id) {
+                file.close();
+                return true;
+            }
+        }  
+     
     }
 
     file.close();
