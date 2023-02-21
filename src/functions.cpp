@@ -1,6 +1,6 @@
 #include "functions.h"
 portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
-
+std::vector<long> ids;
 // const char *ssid = "project_wifi";
 // const char *password = "12345678";
 const char *ssid = "OphirBZK";
@@ -12,6 +12,38 @@ uint64_t chipid = ESP.getEfuseMac();
 String port = "1231";
 
 String url_client = "http://192.168.1.69:" + port;
+
+// ##################################################################
+// print chips id
+// ##################################################################
+
+void printChipId()
+{
+    String chipids = String(chipid);
+    Serial.printf("ESP32 Chip ID In DEC: ");
+    Serial.println(chipids);                                                                       // print the chip ID
+    Serial.printf("ESP32 Chip ID In HEX: %04X%08X\n", (uint16_t)(chipid >> 32), (uint32_t)chipid); // print the chip ID
+}
+
+// ##################################################################
+// function that prints firmware version of PN532 card
+// ##################################################################
+void nfcPrintFirmware(Adafruit_PN532 nfc1)
+{
+    uint32_t versiondata = nfc1.getFirmwareVersion();
+    if (!versiondata)
+    {
+        Serial.print("Didn't find PN53x board");
+        while (1)
+            ; // halt
+    }
+    Serial.print("Found chip PN5");
+    Serial.println((versiondata >> 24) & 0xFF, HEX);
+    Serial.print("Firmware ver. ");
+    Serial.print((versiondata >> 16) & 0xFF, DEC);
+    Serial.print('.');
+    Serial.println((versiondata >> 8) & 0xFF, DEC);
+}
 
 // ##################################################################
 // connect to wifi
@@ -79,17 +111,27 @@ void sendGETList()
 
     if (httpCode == 200)
     {
-        String res = http.getString();
-        DynamicJsonDocument doc(2048);
-        deserializeJson(doc, res);
 
-        Serial.println("these are the names and detailes of the students allowed to enter thi room:");
+        String res = http.getString();
+
+        // Parse JSON response
+        DynamicJsonDocument doc(2048);
+        DeserializationError error = deserializeJson(doc, res);
+        if (error)
+        {
+            // Failed to parse JSON
+            Serial.println("Failed to parse JSON!");
+            return;
+        }
+
         for (JsonVariant row : doc.as<JsonArray>())
         {
-            int person_id = row["person_id"].as<int>();
-            Serial.print("\nID Number: ");
-            Serial.println(person_id);
+            ids.push_back(row["person_id"].as<long>());
+            // int person_id = row["person_id"].as<int>();
+            // Serial.print("\nID Number: ");
+            // Serial.println(person_id);
         }
+        Serial.println("GET was successful");
     }
     else if (httpCode == 404)
     {

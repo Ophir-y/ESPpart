@@ -5,6 +5,10 @@
 #define PN532_MOSI (23)
 #define PN532_SS (4)
 
+#define BUZZER (27)
+#define GREEN_LED (13)
+#define RED_LED (14)
+
 Adafruit_PN532 nfc(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS);
 String idcard;
 Ticker getTicker;
@@ -13,32 +17,29 @@ Ticker postTicker;
 void setup()
 {
   Serial.begin(115200);
-  String chipids = String(chipid);
-  Serial.printf("ESP32 Chip ID In DEC: ");
-  Serial.println(chipids);                                                                       // print the chip ID
-  Serial.printf("ESP32 Chip ID In HEX: %04X%08X\n", (uint16_t)(chipid >> 32), (uint32_t)chipid); // print the chip ID
+  pinMode(BUZZER, OUTPUT);
+  pinMode(GREEN_LED, OUTPUT);
+  pinMode(RED_LED, OUTPUT);
+  // ##################################################################
+  // Print ESP32 ID
+  // ##################################################################
+  printChipId();
+
+  // ##################################################################
+  // connect to WIFI
+  // ##################################################################
   WiFi.onEvent(onWiFiEvent);
   WifiConnect(ssid, password);
   // Wait for the connection to be established
   delay(1000);
+
   // ##################################################################
   // connect to PN532 via SPI
   // ##################################################################
   nfc.begin();
 
-  uint32_t versiondata = nfc.getFirmwareVersion();
-  if (!versiondata)
-  {
-    Serial.print("Didn't find PN53x board");
-    while (1)
-      ; // halt
-  }
-  Serial.print("Found chip PN5");
-  Serial.println((versiondata >> 24) & 0xFF, HEX);
-  Serial.print("Firmware ver. ");
-  Serial.print((versiondata >> 16) & 0xFF, DEC);
-  Serial.print('.');
-  Serial.println((versiondata >> 8) & 0xFF, DEC);
+  nfcPrintFirmware(nfc);
+
   nfc.SAMConfig();
   // ##################################################################
 
@@ -46,16 +47,17 @@ void setup()
   // start http
   // ##################################################################
   // Set up the interrupt for the GET request
+  sendGETList();
   getTicker.attach(20, sendGETList); // 60 seconds
 
   // Set up the interrupt for the POST request
   postTicker.attach(1800, sendPOSTRequest); // 3 minutes
+                                            // ##################################################################
 }
 
 void loop()
 {
 
-  // put your main code here, to run repeatedly:
   uint8_t success;
   uint8_t uid[] = {0, 0, 0, 0, 0, 0, 0}; // Buffer to store the returned UID
   uint8_t uidLength;
@@ -72,4 +74,49 @@ void loop()
     Serial.print("ID CARD : ");
     Serial.println(idcard);
   }
+
+  // Convert the hex input to a long integer.
+  char *end;
+  long idcardLong = strtol(idcard.c_str(), &end, 16);
+
+  Serial.println(idcardLong);
+  // Check if the user input matches one of the stored IDs.
+  bool found = false;
+
+  for (long id : ids)
+  {
+    if (id == idcardLong)
+    {
+      found = true;
+      break;
+    }
+  }
+  if (found)
+  {
+    Serial.println("Can Enter!!!");
+
+    // Set green light toggle and buzzer
+    digitalWrite(GREEN_LED, HIGH);
+    for (int i = 0; i < 200; i++)
+    {
+      digitalWrite(BUZZER, HIGH);
+      delay(1); // wait for 1ms
+      digitalWrite(BUZZER, LOW);
+      delay(1); // wait for 1ms
+    }
+
+    digitalWrite(GREEN_LED, LOW);
+    delay(10); // wait for 1ms
+  }
+  else
+  {
+    Serial.println("NO Enter!!!");
+    // set red light toggle
+    digitalWrite(RED_LED, HIGH);
+    delay(500); // wait for 1ms
+    digitalWrite(RED_LED, LOW);
+    delay(10); // wait for 1ms
+  }
+
+  delay(100);
 }
