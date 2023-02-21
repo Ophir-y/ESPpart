@@ -7,7 +7,10 @@
 #include <Adafruit_PN532.h>
 #include <HTTPClient.h>
 #include <Ticker.h>
+#include <SPIFFS.h>
 #include <ArduinoJson.h>
+#include <SD.h>
+#include "time.h"
 
 //  Functions
 
@@ -26,5 +29,11 @@ void IRAM_ATTR onWiFiEvent(WiFiEvent_t event);
 void sendGETList();
 
 void sendPOSTRequest();
+
+bool isIdAllowed(String id);
+
+bool isIdAllowedOnLI(String id);
+
+void printLocalTime();
 
 #endif

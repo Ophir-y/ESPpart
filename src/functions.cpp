@@ -3,15 +3,18 @@ portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
 
 // const char *ssid = "project_wifi";
 // const char *password = "12345678";
-const char *ssid = "OphirBZK";
-const char *password = "noop2802";
-// const char* ssid = "Rothsl";
-// const char* password = "Bana&nitzan";
+
+// const char *ssid = "OphirBZK";
+// const char *password = "noop2802";
+
+const char* ssid = "Rothsl";
+const char* password = "Bana&nitzan";
 
 uint64_t chipid = ESP.getEfuseMac();
 String port = "1231";
 
-String url_client = "http://192.168.1.69:" + port;
+String url_client = "http://192.168.68.104:" + port;
+// String url_client = "http://192.168.1.69:" + port;
 
 // ##################################################################
 // connect to wifi
@@ -77,19 +80,27 @@ void sendGETList()
     // Serial.println(url_client);
     int httpCode = http.GET();
 
-    if (httpCode == 200)
-    {
-        String res = http.getString();
-        DynamicJsonDocument doc(2048);
-        deserializeJson(doc, res);
+    if (httpCode == 200){
+        String response = http.getString();
+        Serial.println("Response: " + response);
 
-        Serial.println("these are the names and detailes of the students allowed to enter thi room:");
-        for (JsonVariant row : doc.as<JsonArray>())
-        {
-            int person_id = row["person_id"].as<int>();
-            Serial.print("\nID Number: ");
-            Serial.println(person_id);
+        // Save response to file
+        File f = SPIFFS.open("/list_data.txt", "w");
+        if (!f) {
+            Serial.println("Error opening file");
+        } else {
+            f.println(response);
+            f.close();
+            Serial.println("File saved");
         }
+
+        // Serial.println("these are the names and detailes of the students allowed to enter thi room:");
+        // for (JsonVariant row : doc.as<JsonArray>())
+        // {
+        //     int person_id = row["person_id"].as<int>();
+        //     Serial.print("\nID Number: ");
+        //     Serial.println(person_id);
+        // }
     }
     else if (httpCode == 404)
     {
@@ -125,4 +136,76 @@ void sendPOSTRequest()
     http.POST(postData);
 
     http.end();
+}
+
+// ##################################################################
+// comper the ID to the stored IDs
+// ##################################################################
+
+bool isIdAllowed(String id) {
+  File file = SPIFFS.open("/list_data.txt", "r");
+  if (file) {
+    while (file.available()) {
+      String line = file.readStringUntil('\n');
+      line.trim();
+
+      if (line == id) {
+        file.close();
+        return true;
+      }
+    }
+
+    file.close();
+  }
+    return false;
+}
+
+// ##################################################################
+// comper the ID to the stored IDs
+// ##################################################################
+
+bool isIdAllowedOnLI(String id)
+{
+    Serial.println("Send HTTP GET request");
+    // Send HTTP GET request
+    HTTPClient http;
+    http.begin(url_client + "/GETLIST");
+    http.addHeader("X-Custom-ID", String(chipid));
+    // Serial.println(url_client);
+    int httpCode = http.GET();
+
+    if (httpCode == 200){
+       String response = http.getString();
+    }
+    else if (httpCode == 404)
+    {
+        // Resource not found on server
+        Serial.println("Error 404: resource not found");
+    }
+    else if (httpCode == 500)
+    {
+        // Server error
+        Serial.println("Error 500: internal server error");
+    }
+    else
+    {
+        // Other error occurred
+        Serial.println("Error sending GET request");
+    }
+
+    http.end();
+}
+
+// ##################################################################
+// print the time
+// ##################################################################
+
+void printLocalTime()
+{
+  struct tm timeinfo;
+  if(!getLocalTime(&timeinfo)){
+    Serial.println("Failed to obtain time");
+    return;
+  }
+  Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
 }

@@ -5,6 +5,12 @@
 #define PN532_MOSI (23)
 #define PN532_SS (4)
 
+#define FILENAME "test.txt"
+
+const char* ntpServer = "server 0.asia.pool.ntp.org";
+const long  gmtOffset_sec = 7200;
+const int   daylightOffset_sec = 3600;
+
 Adafruit_PN532 nfc(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS);
 String idcard;
 Ticker getTicker;
@@ -46,15 +52,43 @@ void setup()
   // start http
   // ##################################################################
   // Set up the interrupt for the GET request
-  getTicker.attach(20, sendGETList); // 60 seconds
+  getTicker.attach(50, sendGETList); // 60 seconds
 
   // Set up the interrupt for the POST request
   postTicker.attach(1800, sendPOSTRequest); // 3 minutes
+
+  // get the real time
+  configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+
+  // // Initialize SPIFFS
+  // if (!SPIFFS.begin()) {
+  //   Serial.println("Failed to mount file system 123");
+  //   return;
+  // }
+
+  // // Create a new file
+  // File file = SPIFFS.open("/list_data.txt", FILE_WRITE);
+  // if(!file){
+  //   Serial.println("Failed to create file");
+  //   return;
+  // }
+
+  //   // initialize SD card
+  // if (!SD.begin()) {
+  //   Serial.println("Error initializing SD card");
+  //   return;
+  // }
+
+  //   // open file for writing
+  // File file = SD.open(FILENAME, FILE_WRITE);
+  // if (!file) {
+  //   Serial.println("Error opening file");
+  //   return;
+  // }
 }
 
 void loop()
 {
-
   // put your main code here, to run repeatedly:
   uint8_t success;
   uint8_t uid[] = {0, 0, 0, 0, 0, 0, 0}; // Buffer to store the returned UID
@@ -69,7 +103,17 @@ void loop()
       idcard += (uid[i] < 0x10 ? "0" : "") +
                 String(uid[i], HEX);
     }
-    Serial.print("ID CARD : ");
+    Serial.print("ID CARD in HEX : ");
     Serial.println(idcard);
+    // compare with saved data
+    if (isIdAllowed(idcard)) {
+      Serial.println("Access granted");
+      // add code here to grant access
+    }
+    else{
+      Serial.println("Access denai");
+    }
   }
+  printLocalTime();
+  delay(1000);
 }
