@@ -36,4 +36,6 @@ bool isIdAllowedOnLI(String id);
 
 void printLocalTime();
 
+void SendGetTime();
+
 #endif

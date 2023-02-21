@@ -7,9 +7,6 @@
 
 #define FILENAME "test.txt"
 
-const char* ntpServer = "server 0.asia.pool.ntp.org";
-const long  gmtOffset_sec = 7200;
-const int   daylightOffset_sec = 3600;
 
 Adafruit_PN532 nfc(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS);
 String idcard;
@@ -85,6 +82,9 @@ void setup()
   //   Serial.println("Error opening file");
   //   return;
   // }
+
+  SendGetTime();
+
 }
 
 void loop()
@@ -106,14 +106,16 @@ void loop()
     Serial.print("ID CARD in HEX : ");
     Serial.println(idcard);
     // compare with saved data
-    if (isIdAllowed(idcard)) {
-      Serial.println("Access granted");
-      // add code here to grant access
-    }
-    else{
-      Serial.println("Access denai");
-    }
+    // if (isIdAllowed(idcard)) {
+    //   Serial.println("Access granted");
+    //   // add code here to grant access
+    // }
+    // else{
+    //   Serial.println("Access denai");
+    // }
   }
-  printLocalTime();
+   time_t now = time(NULL);
+  Serial.println(ctime(&now));
+  
   delay(1000);
 }

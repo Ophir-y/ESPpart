@@ -83,24 +83,26 @@ void sendGETList()
     if (httpCode == 200){
         String response = http.getString();
         Serial.println("Response: " + response);
+        DynamicJsonDocument doc(1024);
+         deserializeJson(doc, response);
 
-        // Save response to file
-        File f = SPIFFS.open("/list_data.txt", "w");
-        if (!f) {
-            Serial.println("Error opening file");
-        } else {
-            f.println(response);
-            f.close();
-            Serial.println("File saved");
-        }
-
-        // Serial.println("these are the names and detailes of the students allowed to enter thi room:");
-        // for (JsonVariant row : doc.as<JsonArray>())
-        // {
-        //     int person_id = row["person_id"].as<int>();
-        //     Serial.print("\nID Number: ");
-        //     Serial.println(person_id);
+        // // Save response to file
+        // File f = SPIFFS.open("/list_data.txt", "w");
+        // if (!f) {
+        //     Serial.println("Error opening file");
+        // } else {
+        //     f.println(response);
+        //     f.close();
+        //     Serial.println("File saved");
         // }
+
+        Serial.println("these are the names and detailes of the students allowed to enter thi room:");
+        for (JsonVariant row : doc.as<JsonArray>())
+        {
+            int person_id = row["person_id"].as<int>();
+            Serial.print("\nID Number: ");
+            Serial.println(person_id);
+        }
     }
     else if (httpCode == 404)
     {
@@ -208,4 +210,36 @@ void printLocalTime()
     return;
   }
   Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
+}
+
+// ##################################################################
+// ask the server for time
+// ##################################################################
+
+void SendGetTime()
+{
+    Serial.println("Send HTTP GET request");
+    // Send HTTP GET request
+    HTTPClient http;
+    http.begin(url_client + "/time");
+    http.addHeader("X-Custom-ID", String(chipid));
+    // Serial.println(url_client);
+    int httpCode = http.GET();
+
+    if (httpCode == 200){
+        String payload = http.getString();
+        DynamicJsonDocument doc(1024);
+        deserializeJson(doc, payload);
+
+        long timestamp = doc["timestamp"];
+        Serial.println("Received timestamp: " + String(timestamp));
+
+        // Set the ESP32's internal clock to the received time
+        struct timeval tv = { .tv_sec = timestamp };
+        settimeofday(&tv, NULL);
+  } else {
+    Serial.print("HTTP time GET request failed, error: ");
+    Serial.println(httpCode);
+  }
+    http.end();
 }
