@@ -82,27 +82,42 @@ void sendGETList()
 
     if (httpCode == 200){
         String response = http.getString();
-        // Serial.println("Response: " + response);
-        DynamicJsonDocument doc(1024);
-         deserializeJson(doc, response);
+        File file = SPIFFS.open("/list_data.txt", "r");
+        String line = file.readStringUntil('\n');
+        if(line==response){
+            Serial.println("no new informtion");
+            file.close();
+            http.end();
+            return;
+        }
+        file.close();
+        //  if (SPIFFS.remove("/list_data.txt")) {
+        //     Serial.println("File deleted successfully");
+        // } else {
+        //     Serial.println("Failed to delete file");
+        // }
 
         // Save response to file
         File f = SPIFFS.open("/list_data.txt", "w");
         if (!f) {
             Serial.println("Error opening file");
         } else {
-            f.println(response);
+            // f.print(response);
             f.close();
             Serial.println("File saved");
         }
-        // print the names
-        Serial.println("these are the names and detailes of the students allowed to enter thi room:");
-        for (JsonVariant row : doc.as<JsonArray>())
-        {
-            int person_id = row["person_id"].as<int>();
-            Serial.print("\nID Number: ");
-            Serial.println(person_id);
-        }
+
+        // // Serial.println("Response: " + response);
+        // DynamicJsonDocument doc(1024);
+        // eserializeJson(doc, response);
+        // // print the names
+        // Serial.println("these are the names and detailes of the students allowed to enter thi room:");
+        // for (JsonVariant row : doc.as<JsonArray>())
+        // {
+        //     int person_id = row["person_id"].as<int>();
+        //     Serial.print("\nID Number: ");
+        //     Serial.println(person_id);
+        // }
     }
     else if (httpCode == 404)
     {
@@ -142,24 +157,38 @@ void sendPOSTRequest()
 
 // ##################################################################
 // comper the ID to the stored IDs
+// inputs:
+// id - input the string that you recived from RFID reader
 // ##################################################################
 
 bool isIdAllowed(String id) {
+    // change later, this change is done because of the weird id
     String chek123 = "012145171243";
-    String newid = "123321123";
+    String newid = "123123123";
     if ( id == chek123){
          id = newid;
     }
+    Serial.print("the id is: ");
+    Serial.println(id);
+    ///####################################################
+
+
+    // open file
   File file = SPIFFS.open("/list_data.txt", "r");
+  
+  // true if file retrival was successful
   if (file) {
+    // read file lines until reached empty
     while (file.available()) {
+    // read first line
       String line = file.readStringUntil('\n');
+      // trim white space
       line.trim();
+      //create json 
       DynamicJsonDocument doc(1024);
       deserializeJson(doc, line);
       for (JsonVariant row : doc.as<JsonArray>())
         {
-
             String person_id = row["person_id"];
             Serial.println(person_id);
              if (person_id == id) {
@@ -167,7 +196,6 @@ bool isIdAllowed(String id) {
                 return true;
             }
         }  
-     
     }
 
     file.close();
@@ -179,36 +207,22 @@ bool isIdAllowed(String id) {
 // comper the ID to the stored IDs
 // ##################################################################
 
-bool isIdAllowedOnLI(String id)
+void SaveLog(String id, String Access)
 {
-    Serial.println("Send HTTP GET request");
-    // Send HTTP GET request
-    HTTPClient http;
-    http.begin(url_client + "/GETLIST");
-    http.addHeader("X-Custom-ID", String(chipid));
-    // Serial.println(url_client);
-    int httpCode = http.GET();
-
-    if (httpCode == 200){
-       String response = http.getString();
-    }
-    else if (httpCode == 404)
-    {
-        // Resource not found on server
-        Serial.println("Error 404: resource not found");
-    }
-    else if (httpCode == 500)
-    {
-        // Server error
-        Serial.println("Error 500: internal server error");
-    }
-    else
-    {
-        // Other error occurred
-        Serial.println("Error sending GET request");
-    }
-
-    http.end();
+            // Save response to file
+        time_t now = time(NULL);
+        String the_accsss_as = id + Access; 
+        String the_time_is = ctime(&now);
+        File f = SPIFFS.open("/log.txt", "w");
+        if (!f) {
+            Serial.println("Error opening file");
+        } else {
+            Serial.println(ctime(&now));
+            Serial.println(the_accsss_as+the_time_is);
+            f.println(the_accsss_as+the_time_is);
+            f.close();
+            Serial.println("log saved");
+        }
 }
 
 // ##################################################################

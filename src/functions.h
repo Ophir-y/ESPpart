@@ -10,6 +10,7 @@
 #include <SPIFFS.h>
 #include <ArduinoJson.h>
 #include <SD.h>
+#include <Wire.h>
 #include "time.h"
 
 //  Functions
@@ -32,7 +33,7 @@ void sendPOSTRequest();
 
 bool isIdAllowed(String id);
 
-bool isIdAllowedOnLI(String id);
+void SaveLog(String id, String Access);
 
 void printLocalTime();
 
