@@ -110,70 +110,11 @@ void loop()
         digitalWrite(BUZZER, LOW);
         delay(1); // wait for 1ms
       }
-      digitalWrite(RED_LED, HIGH);
+      digitalWrite(RED_LED, LOW);
       delay(2000);
       return;
     }
   }
-
-  //   uint8_t success;
-  //   uint8_t uid[] = {0, 0, 0, 0, 0, 0, 0}; // Buffer to store the returned UID
-  //   uint8_t uidLength;
-  //   success = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength);
-  //   if (success)
-  //   {
-  //     // Display some basic information about the card
-  //     idcard = "";
-  //     for (byte i = 0; i <= uidLength - 1; i++)
-  //     {
-  //       idcard += (uid[i] < 0x10 ? "0" : "") + String(uid[i], HEX);
-  //     }
-  //     Serial.print("ID CARD : ");
-  //     Serial.println(idcard);
-  //   }
-
-  //   // Convert the hex input to a long integer.
-  //   char *end;
-  //   long idcardLong = strtol(idcard.c_str(), &end, 16);
-
-  //   Serial.println(idcardLong);
-  //   // Check if the user input matches one of the stored IDs.
-  //   bool found = false;
-
-  //   for (long id : ids)
-  //   {
-  //     if (id == idcardLong)
-  //     {
-  //       found = true;
-  //       break;
-  //     }
-  //   }
-  //   if (found)
-  //   {
-  //     Serial.println("Can Enter!!!");
-
-  //     // Set green light toggle and buzzer
-  //     digitalWrite(GREEN_LED, HIGH);
-  //     for (int i = 0; i < 200; i++)
-  //     {
-  //       digitalWrite(BUZZER, HIGH);
-  //       delay(1); // wait for 1ms
-  //       digitalWrite(BUZZER, LOW);
-  //       delay(1); // wait for 1ms
-  //     }
-
-  //     digitalWrite(GREEN_LED, LOW);
-  //     delay(10); // wait for 1ms
-  //   }
-  //   else
-  //   {
-  //     Serial.println("NO Enter!!!");
-  //     // set red light toggle
-  //     digitalWrite(RED_LED, HIGH);
-  //     delay(500); // wait for 1ms
-  //     digitalWrite(RED_LED, LOW);
-  //     delay(10); // wait for 1ms
-  //   }
 
   delay(100);
 }
