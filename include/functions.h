@@ -4,12 +4,13 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <SPI.h>
-#include <Adafruit_PN532.h>
+// #include <Adafruit_PN532.h>
 #include <HTTPClient.h>
 #include <Ticker.h>
 #include <ArduinoJson.h>
-
-#include <vector>
+#include "adafruit.h"
+#include <set>
+#include <SPIFFS.h>
 
 //  Functions
 
@@ -21,17 +22,17 @@ extern const char *password;
 extern String port;
 extern uint64_t chipid;
 
-extern std::vector<long> ids;
+extern std::set<int> ids;
 
 // ##################################################################
 // print chips id
 // ##################################################################
 void printChipId();
 
-// ##################################################################
-// function that prints firmware version of PN532 card
-// ##################################################################
-void nfcPrintFirmware(Adafruit_PN532 nfc);
+// // ##################################################################
+// // function that prints firmware version of PN532 card
+// // ##################################################################
+// void nfcPrintFirmware(Adafruit_PN532 nfc);
 
 // ##################################################################
 // connect to wifi

@@ -1,6 +1,6 @@
 #include "functions.h"
 portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
-std::vector<long> ids;
+std::set<int> ids;
 // const char *ssid = "project_wifi";
 // const char *password = "12345678";
 const char *ssid = "OphirBZK";
@@ -25,25 +25,25 @@ void printChipId()
     Serial.printf("ESP32 Chip ID In HEX: %04X%08X\n", (uint16_t)(chipid >> 32), (uint32_t)chipid); // print the chip ID
 }
 
-// ##################################################################
-// function that prints firmware version of PN532 card
-// ##################################################################
-void nfcPrintFirmware(Adafruit_PN532 nfc1)
-{
-    uint32_t versiondata = nfc1.getFirmwareVersion();
-    if (!versiondata)
-    {
-        Serial.print("Didn't find PN53x board");
-        while (1)
-            ; // halt
-    }
-    Serial.print("Found chip PN5");
-    Serial.println((versiondata >> 24) & 0xFF, HEX);
-    Serial.print("Firmware ver. ");
-    Serial.print((versiondata >> 16) & 0xFF, DEC);
-    Serial.print('.');
-    Serial.println((versiondata >> 8) & 0xFF, DEC);
-}
+// // ##################################################################
+// // function that prints firmware version of PN532 card
+// // ##################################################################
+// void nfcPrintFirmware(Adafruit_PN532 nfc1)
+// {
+//     uint32_t versiondata = nfc1.getFirmwareVersion();
+//     if (!versiondata)
+//     {
+//         Serial.print("Didn't find PN53x board");
+//         while (1)
+//             ; // halt
+//     }
+//     Serial.print("Found chip PN5");
+//     Serial.println((versiondata >> 24) & 0xFF, HEX);
+//     Serial.print("Firmware ver. ");
+//     Serial.print((versiondata >> 16) & 0xFF, DEC);
+//     Serial.print('.');
+//     Serial.println((versiondata >> 8) & 0xFF, DEC);
+// }
 
 // ##################################################################
 // connect to wifi
@@ -126,7 +126,7 @@ void sendGETList()
 
         for (JsonVariant row : doc.as<JsonArray>())
         {
-            ids.push_back(row["person_id"].as<long>());
+            ids.insert(row["person_id"].as<int>());
             // int person_id = row["person_id"].as<int>();
             // Serial.print("\nID Number: ");
             // Serial.println(person_id);
