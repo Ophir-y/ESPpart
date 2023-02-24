@@ -4,34 +4,45 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <SPI.h>
-#include <Adafruit_PN532.h>
+// #include <Adafruit_PN532.h>
 #include <HTTPClient.h>
 #include <Ticker.h>
 #include <ArduinoJson.h>
-
-#include <vector>
+#include "adafruit.h"
+#include <set>
+#include <SPIFFS.h>
+#include <SD.h>
+#include "time.h"
 
 //  Functions
 
 extern portMUX_TYPE timerMux;
 extern String url_client;
 
+// WIFI info
 extern const char *ssid;
 extern const char *password;
 extern String port;
+
+// chip id
 extern uint64_t chipid;
 
-extern std::vector<long> ids;
+// file path on ESP
+extern String Permitted_ID_LIST_file;
+extern String LOG_file;
+
+extern std::set<long> check_ids;
+extern std::set<long> ids;
 
 // ##################################################################
 // print chips id
 // ##################################################################
 void printChipId();
 
-// ##################################################################
-// function that prints firmware version of PN532 card
-// ##################################################################
-void nfcPrintFirmware(Adafruit_PN532 nfc);
+// // ##################################################################
+// // function that prints firmware version of PN532 card
+// // ##################################################################
+// void nfcPrintFirmware(Adafruit_PN532 nfc);
 
 // ##################################################################
 // connect to wifi
@@ -52,5 +63,9 @@ void sendGETList();
 // POST request
 // ##################################################################
 void sendPOSTRequest();
+
+void printLocalTime();
+
+void SendGetTime();
 
 #endif

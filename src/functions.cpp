@@ -1,18 +1,24 @@
 #include "functions.h"
 portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
-std::vector<long> ids;
-// const char *ssid = "project_wifi";
-// const char *password = "12345678";
-const char *ssid = "OphirBZK";
-const char *password = "noop2802";
+
+std::set<long> check_ids;
+std::set<long> ids;
+
+const char *ssid = "project_wifi";
+const char *password = "12345678";
+// const char *ssid = "OphirBZK";
+// const char *password = "noop2802";
 // const char* ssid = "Rothsl";
 // const char* password = "Bana&nitzan";
 
 uint64_t chipid = ESP.getEfuseMac();
 String port = "1231";
 
-String url_client = "http://192.168.1.69:" + port;
-
+// String url_client = "http://192.168.1.69:" + port;
+String url_client = "http://192.168.31.69:" + port;
+// Global strings for file commands
+String Permitted_ID_LIST_file = "/list_data.txt";
+String LOG_file = "/log_data.txt";
 // ##################################################################
 // print chips id
 // ##################################################################
@@ -25,25 +31,25 @@ void printChipId()
     Serial.printf("ESP32 Chip ID In HEX: %04X%08X\n", (uint16_t)(chipid >> 32), (uint32_t)chipid); // print the chip ID
 }
 
-// ##################################################################
-// function that prints firmware version of PN532 card
-// ##################################################################
-void nfcPrintFirmware(Adafruit_PN532 nfc1)
-{
-    uint32_t versiondata = nfc1.getFirmwareVersion();
-    if (!versiondata)
-    {
-        Serial.print("Didn't find PN53x board");
-        while (1)
-            ; // halt
-    }
-    Serial.print("Found chip PN5");
-    Serial.println((versiondata >> 24) & 0xFF, HEX);
-    Serial.print("Firmware ver. ");
-    Serial.print((versiondata >> 16) & 0xFF, DEC);
-    Serial.print('.');
-    Serial.println((versiondata >> 8) & 0xFF, DEC);
-}
+// // ##################################################################
+// // function that prints firmware version of PN532 card
+// // ##################################################################
+// void nfcPrintFirmware(Adafruit_PN532 nfc1)
+// {
+//     uint32_t versiondata = nfc1.getFirmwareVersion();
+//     if (!versiondata)
+//     {
+//         Serial.print("Didn't find PN53x board");
+//         while (1)
+//             ; // halt
+//     }
+//     Serial.print("Found chip PN5");
+//     Serial.println((versiondata >> 24) & 0xFF, HEX);
+//     Serial.print("Firmware ver. ");
+//     Serial.print((versiondata >> 16) & 0xFF, DEC);
+//     Serial.print('.');
+//     Serial.println((versiondata >> 8) & 0xFF, DEC);
+// }
 
 // ##################################################################
 // connect to wifi
@@ -113,9 +119,8 @@ void sendGETList()
     {
 
         String res = http.getString();
-
-        // Parse JSON response
-        DynamicJsonDocument doc(2048);
+        // Parse JSON response max of about 1000 people per door
+        DynamicJsonDocument doc(32768);
         DeserializationError error = deserializeJson(doc, res);
         if (error)
         {
@@ -123,25 +128,31 @@ void sendGETList()
             Serial.println("Failed to parse JSON!");
             return;
         }
-
         for (JsonVariant row : doc.as<JsonArray>())
         {
-            ids.push_back(row["person_id"].as<long>());
-            // int person_id = row["person_id"].as<int>();
-            // Serial.print("\nID Number: ");
-            // Serial.println(person_id);
+            check_ids.insert(row["person_id"].as<long>());
         }
-        Serial.println("GET was successful");
-    }
-    else if (httpCode == 404)
-    {
-        // Resource not found on server
-        Serial.println("Error 404: resource not found");
-    }
-    else if (httpCode == 500)
-    {
-        // Server error
-        Serial.println("Error 500: internal server error");
+        if (ids != check_ids)
+        {
+            ids = check_ids;
+            // Save response to file
+            File file = SPIFFS.open(Permitted_ID_LIST_file, FILE_WRITE);
+            if (!file)
+            {
+                Serial.println("Error opening file");
+            }
+            else
+            {
+                file.println(res);
+                file.close();
+                Serial.println("File saved");
+                Serial.println("GET was successful");
+            }
+        }
+        else
+        {
+            Serial.println("No change in list");
+        }
     }
     else
     {
@@ -166,5 +177,81 @@ void sendPOSTRequest()
     String postData = "param1=value1&param2=value2"; // Replace with your POST data
     http.POST(postData);
 
+    http.end();
+}
+
+// ##################################################################
+// load data from file to the ids set
+// ##################################################################
+
+void LoadFileToIDSet()
+{
+    File file = SPIFFS.open(Permitted_ID_LIST_file, FILE_READ);
+    if (file)
+    {
+        DynamicJsonDocument doc(32768);
+
+        DeserializationError error = deserializeJson(doc, file);
+
+        if (error)
+        {
+            Serial.print("deserializeJson() failed: ");
+            Serial.println(error.c_str());
+            return;
+        }
+        for (JsonVariant item : doc.as<JsonArray>())
+        {
+            ids.insert(item["person_id"].as<long>());
+        }
+        file.close();
+    }
+}
+
+// ##################################################################
+// print the time
+// ##################################################################
+
+void printLocalTime()
+{
+    struct tm timeinfo;
+    if (!getLocalTime(&timeinfo))
+    {
+        Serial.println("Failed to obtain time");
+        return;
+    }
+    Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
+}
+// ##################################################################
+// ask the server for time
+// ##################################################################
+
+void SendGetTime()
+{
+    Serial.println("Send HTTP GET request");
+    // Send HTTP GET request
+    HTTPClient http;
+    http.begin(url_client + "/time");
+    http.addHeader("X-Custom-ID", String(chipid));
+    // Serial.println(url_client);
+    int httpCode = http.GET();
+
+    if (httpCode == 200)
+    {
+        String payload = http.getString();
+        DynamicJsonDocument doc(1024);
+        deserializeJson(doc, payload);
+
+        long timestamp = doc["timestamp"];
+        Serial.println("Received timestamp: " + String(timestamp));
+
+        // Set the ESP32's internal clock to the received time
+        struct timeval tv = {.tv_sec = timestamp};
+        settimeofday(&tv, NULL);
+    }
+    else
+    {
+        Serial.print("HTTP time GET request failed, error: ");
+        Serial.println(httpCode);
+    }
     http.end();
 }
