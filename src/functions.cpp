@@ -132,6 +132,7 @@ void sendGETList()
         {
             check_ids.insert(row["person_id"].as<long>());
         }
+        // only open and write a new file if the recived list is different from list on board.
         if (ids != check_ids)
         {
             ids = check_ids;
