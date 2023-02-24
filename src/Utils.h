@@ -21,8 +21,8 @@
 // ATTENTION: Only one of the following defines must be set to true!
 // NOTE: In Software SPI mode there is no external libraray required. Only 4 regular digital pins are used.
 // If you want to transfer the code to another processor the easiest way will be to use Software SPI mode.
-#define USE_SOFTWARE_SPI FALSE  // Visual Studio needs this in upper case
-#define USE_HARDWARE_SPI TRUE // Visual Studio needs this in upper case
+#define USE_SOFTWARE_SPI FALSE // Visual Studio needs this in upper case
+#define USE_HARDWARE_SPI TRUE  // Visual Studio needs this in upper case
 #define USE_HARDWARE_I2C FALSE // Visual Studio needs this in upper case
 // ********************************************************************************/
 
@@ -33,7 +33,6 @@
 #elif USE_SOFTWARE_SPI
 #include <SPI.h> // Hardware SPI bus
 #else
-#error "You must specify the PN532 communication mode."
 #endif
 
 #define LF "\r\n" // LineFeed

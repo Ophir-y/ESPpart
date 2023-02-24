@@ -52,38 +52,63 @@ void setup()
   // ##################################################################
 
   // ##################################################################
+  // Initialize SPIFFS
+  // ##################################################################
+
+  if (!SPIFFS.begin(true))
+  {
+    Serial.println("Failed to mount file system");
+    return;
+  }
+
+  // Create a new file
+  File file = SPIFFS.open(Permitted_ID_LIST_file, FILE_WRITE);
+  if (!file)
+  {
+    Serial.println("Failed to create file");
+    return;
+  }
+  // ##################################################################
+
+  // ##################################################################
   // start http
   // ##################################################################
   // get request
   sendGETList();
   // Set up the interrupt for the GET request
-  getTicker.attach(20, sendGETList); // 60 seconds
+  getTicker.attach(120, sendGETList); // 60 seconds
 
   // Set up the interrupt for the POST request
-  postTicker.attach(1800, sendPOSTRequest); // 3 minutes
-                                            // ##################################################################
+  postTicker.attach(1800, sendPOSTRequest);
+  // ##################################################################
 
   // Setting up the master key of the PICC
   nfc_PiccMasterKey.SetKeyData(SECRET_PICC_MASTER_KEY, sizeof(SECRET_PICC_MASTER_KEY), CARD_KEY_VERSION);
 
+  // get the real time
+  SendGetTime();
+
   delay(1000);
+  time_t now = time(NULL);
+  Serial.println(ctime(&now));
 }
 
 void loop()
 {
 
-  int id = TrigerRfid();
+  long id = TrigerRfid();
   if (id < 0)
   {
+
     keep_alive_counter += 20;
     return; // Failure
   }
   else if (id > 0)
   { // Card was presented
     String message = String(id);
+    // long idl = (long)id;
     if (ids.find(id) != ids.end())
     {
-
       message += " Approved";
       Serial.println(message);
       digitalWrite(GREEN_LED, HIGH);
@@ -95,7 +120,7 @@ void loop()
         delay(1); // wait for 1ms
       }
       digitalWrite(GREEN_LED, LOW);
-      delay(2000);
+      delay(2500);
       return;
     }
     else
@@ -115,6 +140,5 @@ void loop()
       return;
     }
   }
-
   delay(100);
 }

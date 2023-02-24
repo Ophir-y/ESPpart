@@ -11,18 +11,28 @@
 #include "adafruit.h"
 #include <set>
 #include <SPIFFS.h>
+#include <SD.h>
+#include "time.h"
 
 //  Functions
 
 extern portMUX_TYPE timerMux;
 extern String url_client;
 
+// WIFI info
 extern const char *ssid;
 extern const char *password;
 extern String port;
+
+// chip id
 extern uint64_t chipid;
 
-extern std::set<int> ids;
+// file path on ESP
+extern String Permitted_ID_LIST_file;
+extern String LOG_file;
+
+extern std::set<long> check_ids;
+extern std::set<long> ids;
 
 // ##################################################################
 // print chips id
@@ -53,5 +63,9 @@ void sendGETList();
 // POST request
 // ##################################################################
 void sendPOSTRequest();
+
+void printLocalTime();
+
+void SendGetTime();
 
 #endif
