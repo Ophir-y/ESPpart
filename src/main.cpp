@@ -1,13 +1,20 @@
 #include "functions.h"
 
+// ########   SPI for PN532:
 // #define PN532_SCK (18)
 // #define PN532_MISO (19)
 // #define PN532_MOSI (23)
-#define PN532_SS (4)
+#define PN532_SS (4) //
 
-#define BUZZER (27)
-#define GREEN_LED (13)
-#define RED_LED (14)
+// ########   SPI for SD reader:
+#define SD_SCK (14)
+#define SD_MISO (12)
+#define SD_MOSI (13)
+#define SD_CS (27)
+
+#define BUZZER (25)
+#define GREEN_LED (33)
+#define RED_LED (32)
 
 // Adafruit_PN532 nfc(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS);
 Desfire nfc_PN532;
