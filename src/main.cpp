@@ -8,7 +8,7 @@
 
 // ########   SPI for SD reader:
 #define SD_SCK (14)
-#define SD_MISO (12)
+#define SD_MISO (26)
 #define SD_MOSI (13)
 #define SD_CS (27)
 
@@ -26,6 +26,8 @@ AES nfc_PiccMasterKey; // An authentication key for the given cards. Defined in 
 bool initSuccess = false;
 uint64_t lastId = 0;
 int keep_alive_counter = 0;
+
+SPIClass hspi(HSPI);
 
 void setup()
 {
@@ -49,33 +51,27 @@ void setup()
   // ##################################################################
   // connect to PN532 via SPI
   // ##################################################################
-  // nfc.begin();
-  // nfc_PN532.InitSoftwareSPI(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS, GREEN_LED);
   nfc_PN532.InitHardwareSPI(SPI_CS_PIN, RESET_PIN);
-  // nfcPrintFirmware(nfc);
-
-  // nfc.SAMConfig();
 
   // ##################################################################
-
-  // ##################################################################
-  // Initialize SPIFFS
+  // initialize the SD card
   // ##################################################################
 
-  if (!SPIFFS.begin(true))
+  hspi.begin(SD_SCK, SD_MISO, SD_MOSI, SD_CS);
+  if (!SD.begin(SD_CS, hspi))
   {
-    Serial.println("Failed to mount file system");
-    return;
+    Serial.println("Error initializing SD card.");
   }
 
-  // Create a new file
-  File file = SPIFFS.open(Permitted_ID_LIST_file, FILE_WRITE);
-  if (!file)
-  {
-    Serial.println("Failed to create file");
-    return;
-  }
+  // Check if admittance_list.txt exists, and create it if it doesn't
+  check_make_file(Permitted_ID_LIST_file);
+  check_make_file(LOG_file);
+
   // ##################################################################
+  // start http
+  // ##################################################################
+  // load file to set
+  LoadFileToIDSet();
 
   // ##################################################################
   // start http

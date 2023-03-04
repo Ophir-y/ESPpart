@@ -4,18 +4,18 @@ portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
 std::set<long> check_ids;
 std::set<long> ids;
 
-const char *ssid = "project_wifi";
-const char *password = "12345678";
-// const char *ssid = "OphirBZK";
-// const char *password = "noop2802";
+// const char *ssid = "project_wifi";
+// const char *password = "12345678";
+const char *ssid = "OphirBZK";
+const char *password = "noop2802";
 // const char* ssid = "Rothsl";
 // const char* password = "Bana&nitzan";
 
 uint64_t chipid = ESP.getEfuseMac();
 String port = "1231";
 
-// String url_client = "http://192.168.1.69:" + port;
-String url_client = "http://192.168.31.69:" + port;
+String url_client = "http://192.168.1.69:" + port;
+// String url_client = "http://192.168.31.69:" + port;
 // Global strings for file commands
 String Permitted_ID_LIST_file = "/list_data.txt";
 String LOG_file = "/log_data.txt";
@@ -101,7 +101,7 @@ void IRAM_ATTR onWiFiEvent(WiFiEvent_t event)
         }
     }
 }
-
+// **********************************************************************************
 // ##################################################################
 // Get ID list request
 // ##################################################################
@@ -119,6 +119,7 @@ void sendGETList()
     {
 
         String res = http.getString();
+        String save_res = res;
         // Parse JSON response max of about 1000 people per door
         DynamicJsonDocument doc(32768);
         DeserializationError error = deserializeJson(doc, res);
@@ -137,14 +138,14 @@ void sendGETList()
         {
             ids = check_ids;
             // Save response to file
-            File file = SPIFFS.open(Permitted_ID_LIST_file, FILE_WRITE);
+            File file = SD.open(Permitted_ID_LIST_file, FILE_WRITE);
             if (!file)
             {
                 Serial.println("Error opening file");
             }
             else
             {
-                file.println(res);
+                file.println(save_res);
                 file.close();
                 Serial.println("File saved");
                 Serial.println("GET was successful");
@@ -163,6 +164,7 @@ void sendGETList()
 
     http.end();
 }
+// **********************************************************************************
 
 // ##################################################################
 // POST request
@@ -187,7 +189,8 @@ void sendPOSTRequest()
 
 void LoadFileToIDSet()
 {
-    File file = SPIFFS.open(Permitted_ID_LIST_file, FILE_READ);
+
+    File file = SD.open(Permitted_ID_LIST_file, FILE_READ);
     if (file)
     {
         DynamicJsonDocument doc(32768);
@@ -256,3 +259,29 @@ void SendGetTime()
     }
     http.end();
 }
+
+// *************************************************************************************
+// ##################################################################
+// check if file exists, if not create one
+// input: file name
+// ##################################################################
+void check_make_file(String file_name)
+{
+    if (!SD.exists(file_name))
+    {
+        File file1 = SD.open(file_name, FILE_WRITE);
+        if (file1)
+        {
+            Serial.print("Created");
+            Serial.println(file_name);
+            file1.close();
+        }
+        else
+        {
+
+            Serial.print("Error creating");
+            Serial.println(file_name);
+        }
+    }
+}
+// *************************************************************************************

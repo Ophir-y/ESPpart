@@ -10,7 +10,6 @@
 #include <ArduinoJson.h>
 #include "adafruit.h"
 #include <set>
-#include <SPIFFS.h>
 #include <SD.h>
 #include "time.h"
 
@@ -68,4 +67,13 @@ void printLocalTime();
 
 void SendGetTime();
 
+// **********************************************************************************
+// initialize the SD card
+// ##################################################################
+// check if file exists, if not create one
+// input: file name
+// ##################################################################
+void check_make_file(String file_name);
+// **********************************************************************************
+void LoadFileToIDSet();
 #endif
