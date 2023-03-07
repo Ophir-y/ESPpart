@@ -21,12 +21,16 @@ Desfire nfc_PN532;
 String idcard;
 Ticker getTicker;
 Ticker postTicker;
-
 AES nfc_PiccMasterKey; // An authentication key for the given cards. Defined in Secrets.h
 bool initSuccess = false;
 uint64_t lastId = 0;
 int keep_alive_counter = 0;
-
+byte u8_StoreValue[48] =
+    {0xab, 0xcd, 0xef, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+     0x00, 0x00, 0x00, 0x00, 0x11};
 SPIClass hspi(HSPI);
 
 void setup()
@@ -79,7 +83,7 @@ void setup()
   // get request
   sendGETList();
   // Set up the interrupt for the GET request
-  getTicker.attach(120, sendGETList); // 60 seconds
+  getTicker.attach(120, sendGETList); // 2 min
 
   // Set up the interrupt for the POST request
   postTicker.attach(1800, sendPOSTRequest);
@@ -87,7 +91,16 @@ void setup()
 
   // Setting up the master key of the PICC
   nfc_PiccMasterKey.SetKeyData(SECRET_PICC_MASTER_KEY, sizeof(SECRET_PICC_MASTER_KEY), CARD_KEY_VERSION);
+  // create new card: #############################################
 
+  DESFireFilePermissions k_Permis;
+  k_Permis.e_ReadAccess = DESFireAccessRights(0x00);
+  k_Permis.e_WriteAccess = DESFireAccessRights(0x00);
+  k_Permis.e_ReadAndWriteAccess = DESFireAccessRights(0x00);
+  k_Permis.e_ChangeAccess = DESFireAccessRights(0x00);
+  nfc_PN532.CreateStdDataFile(0, &k_Permis, 48);
+
+  // ###########################################################
   // get the real time
   SendGetTime();
 
@@ -98,7 +111,19 @@ void setup()
 
 void loop()
 {
+  AES i_AppMasterKey = nfc_PiccMasterKey;
+  nfc_PN532.CreateApplication(0x1122, KS_FACTORY_DEFAULT, 1, i_AppMasterKey.GetKeyType());
+  nfc_PN532.SelectApplication(0x1122);
+  nfc_PN532.Authenticate(0, &nfc_PiccMasterKey);
+  if (nfc_PN532.WriteFileData(0, 0, 48, u8_StoreValue))
+  {
 
+    Serial.println("success");
+  }
+  else
+  {
+    Serial.println("fail");
+  }
   long id = TrigerRfid();
   if (id < 0)
   {
@@ -108,40 +133,50 @@ void loop()
   }
   else if (id > 0)
   { // Card was presented
-    String message = String(id);
-    // long idl = (long)id;
-    if (ids.find(id) != ids.end())
+    if (nfc_PN532.WriteFileData(0, 0, 48, u8_StoreValue))
     {
-      message += " Approved";
-      Serial.println(message);
-      digitalWrite(GREEN_LED, HIGH);
-      for (int i = 0; i < 200; i++)
-      {
-        digitalWrite(BUZZER, HIGH);
-        delay(1); // wait for 1ms
-        digitalWrite(BUZZER, LOW);
-        delay(1); // wait for 1ms
-      }
-      digitalWrite(GREEN_LED, LOW);
-      delay(2500);
-      return;
+
+      Serial.println("success");
     }
     else
     {
-      message += " Declined";
-      Serial.println(message);
-      digitalWrite(RED_LED, HIGH);
-      for (int i = 0; i < 200; i++)
-      {
-        digitalWrite(BUZZER, HIGH);
-        delay(2); // wait for 1ms
-        digitalWrite(BUZZER, LOW);
-        delay(1); // wait for 1ms
-      }
-      digitalWrite(RED_LED, LOW);
-      delay(2000);
-      return;
+      Serial.println("fail");
     }
+
+    // String message = String(id);
+    // long idl = (long)id;
+    // if (ids.find(id) != ids.end())
+    // {
+    //   message += " Approved";
+    //   Serial.println(message);
+    //   digitalWrite(GREEN_LED, HIGH);
+    //   for (int i = 0; i < 200; i++)
+    //   {
+    //     digitalWrite(BUZZER, HIGH);
+    //     delay(1); // wait for 1ms
+    //     digitalWrite(BUZZER, LOW);
+    //     delay(1); // wait for 1ms
+    //   }
+    //   digitalWrite(GREEN_LED, LOW);
+    //   delay(2500);
+    //   return;
+    // }
+    // else
+    // {
+    //   message += " Declined";
+    //   Serial.println(message);
+    //   digitalWrite(RED_LED, HIGH);
+    //   for (int i = 0; i < 200; i++)
+    //   {
+    //     digitalWrite(BUZZER, HIGH);
+    //     delay(2); // wait for 1ms
+    //     digitalWrite(BUZZER, LOW);
+    //     delay(1); // wait for 1ms
+    //   }
+    //   digitalWrite(RED_LED, LOW);
+    //   delay(2000);
+    //   return;
+    // }
   }
   delay(100);
 }
