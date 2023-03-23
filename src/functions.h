@@ -12,6 +12,20 @@
 #include <set>
 #include <SD.h>
 #include "time.h"
+#include <stdio.h>
+
+
+#include <Cipher.h>
+#include "mbedtls/aes.h"
+#include "Cipher.h"
+
+
+#include "partosta.h"
+
+// #include <AESLib.h>
+// #include "AES.h"
+
+
 
 //  Functions
 
@@ -32,6 +46,8 @@ extern String LOG_file;
 
 extern std::set<long> check_ids;
 extern std::set<long> ids;
+
+// int keep_alive_counter = 0;
 
 // ##################################################################
 // print chips id
@@ -76,4 +92,15 @@ void SendGetTime();
 void check_make_file(String file_name);
 // **********************************************************************************
 void LoadFileToIDSet();
+
+void listenAndSave(void * parameter);
+
+void processInput(void * parameter);
+
+  // Encrypt the data on the SD card
+void encryptSDCard();
+
+  // Decrypt the data on the SD card
+void decryptSDCard();
+
 #endif

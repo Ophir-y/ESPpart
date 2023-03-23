@@ -4,18 +4,23 @@ portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
 std::set<long> check_ids;
 std::set<long> ids;
 
+Cipher * cipher = new Cipher();
+
 // const char *ssid = "project_wifi";
 // const char *password = "12345678";
-const char *ssid = "OphirBZK";
-const char *password = "noop2802";
-// const char* ssid = "Rothsl";
-// const char* password = "Bana&nitzan";
+// const char *ssid = "OphirBZK";
+// const char *password = "noop2802";
+const char* ssid = "Rothsl";
+const char* password = "Bana&nitzan";
 
 uint64_t chipid = ESP.getEfuseMac();
 String port = "1231";
+String listentoservr = "/listentoservr";
 
-String url_client = "http://192.168.1.69:" + port;
-// String url_client = "http://192.168.31.69:" + port;
+
+// String url_client = "http://192.168.1.69:" + port;
+String url_client = "http://192.168.68.108:" + port;
+String url_server = url_client + listentoservr;
 // Global strings for file commands
 String Permitted_ID_LIST_file = "/list_data.txt";
 String LOG_file = "/log_data.txt";
@@ -114,6 +119,14 @@ void sendGETList()
     http.addHeader("X-Custom-ID", String(chipid));
     // Serial.println(url_client);
     int httpCode = http.GET();
+    int hour, minute, second;
+    String time_str;
+    String *token;
+
+    time_t now = time(NULL);
+    struct tm *tm_struct = localtime(&now);
+
+    int hour_ESP = tm_struct->tm_hour;
 
     if (httpCode == 200)
     {
@@ -132,11 +145,25 @@ void sendGETList()
         for (JsonVariant row : doc.as<JsonArray>())
         {
             check_ids.insert(row["person_id"].as<long>());
+            time_str = row["start_time"].as<String>();
+            int hour, minute, second;
+            sscanf(time_str.c_str(), "%d:%d:%d", &hour, &minute, &second);
+
+
+            printLocalTime();
+            Serial.println(row["start_time"].as<String>());
+            Serial.printf("the start time is: %d and the esp time is: %d\n", hour,hour_ESP);
         }
+        String text = cipher->encryptString(save_res);
+                Serial.println("save_res is: ");
+                Serial.println(save_res);
+                Serial.println("text is: ");
+                Serial.println(text);
+
         // only open and write a new file if the recived list is different from list on board.
         if (ids != check_ids)
         {
-            ids = check_ids;
+            ids= check_ids;
             // Save response to file
             File file = SD.open(Permitted_ID_LIST_file, FILE_WRITE);
             if (!file)
@@ -145,6 +172,12 @@ void sendGETList()
             }
             else
             {
+                // String text = cipher->encryptString(save_res);
+                // file.println(text);
+                // Serial.println("save_res is: ");
+                // Serial.println(save_res);
+                // Serial.println("text is: ");
+                // Serial.println(text);
                 file.println(save_res);
                 file.close();
                 Serial.println("File saved");
@@ -241,6 +274,13 @@ void SendGetTime()
 
     if (httpCode == 200)
     {
+        
+    struct tm timeinfo;
+    timezone tz;
+    timezone tz_utc = {0,0};
+
+
+
         String payload = http.getString();
         DynamicJsonDocument doc(1024);
         deserializeJson(doc, payload);
@@ -250,7 +290,9 @@ void SendGetTime()
 
         // Set the ESP32's internal clock to the received time
         struct timeval tv = {.tv_sec = timestamp};
-        settimeofday(&tv, NULL);
+         tz.tz_minuteswest = 12000;
+         tz.tz_dsttime = DST_EET;
+        settimeofday(&tv, &tz_utc);
     }
     else
     {
@@ -285,3 +327,104 @@ void check_make_file(String file_name)
     }
 }
 // *************************************************************************************
+
+
+// Function to listen to server and save JSON to SD card
+void listenAndSave(void * parameter)
+{
+ {
+  while(true)
+  {
+    WiFiClient client;
+    HTTPClient http;
+    if(http.begin(client, url_server))
+    {
+      int httpResponseCode = http.GET();
+      if(httpResponseCode == 200)
+      {
+        String response = http.getString();
+        // Check the content of the response
+        if(response.indexOf("get_info") != -1)
+        {
+          // The server is requesting information
+          // TODO: Implement code to send information to server
+        }
+        else if(response.indexOf("new_list") != -1)
+        {
+          // The server is sending a new list
+          File file = SD.open("/data.json", FILE_WRITE);
+          if(file)
+          {
+            file.print(response);
+            file.close();
+          }
+        }
+        else if(response.indexOf("new_log") != -1)
+        {
+          // The server is sending a new log
+          File file = SD.open("/log.txt", FILE_WRITE);
+          if(file)
+          {
+            file.print(response);
+            file.close();
+          }
+        }
+      }
+      http.end();
+    }
+    delay(60000);
+  }
+}
+}
+
+
+// Function to process input from PN532 module
+void processInput(void * parameter)
+{
+ long id = TrigerRfid();
+  if (id < 0)
+  {
+
+    // keep_alive_counter += 20;
+    return; // Failure
+  }
+  else if (id > 0)
+  { // Card was presented
+    String message = String(id);
+    // long idl = (long)id;
+    if (ids.find(id) != ids.end())
+    {
+      message += " Approved";
+      Serial.println(message);
+      digitalWrite(GREEN_LED, HIGH);
+      for (int i = 0; i < 200; i++)
+      {
+        digitalWrite(BUZZER, HIGH);
+        delay(1); // wait for 1ms
+        digitalWrite(BUZZER, LOW);
+        delay(1); // wait for 1ms
+      }
+      digitalWrite(GREEN_LED, LOW);
+      delay(2500);
+      return;
+    }
+    else
+    {
+      message += " Declined";
+      Serial.println(message);
+      digitalWrite(RED_LED, HIGH);
+      for (int i = 0; i < 200; i++)
+      {
+        digitalWrite(BUZZER, HIGH);
+        delay(2); // wait for 1ms
+        digitalWrite(BUZZER, LOW);
+        delay(1); // wait for 1ms
+      }
+      digitalWrite(RED_LED, LOW);
+      delay(2000);
+      return;
+    }
+  }
+  delay(100);
+}
+
