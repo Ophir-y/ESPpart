@@ -4,6 +4,8 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <SPI.h>
+#include <esp_task_wdt.h>
+#include <sdkconfig.h>
 // #include <Adafruit_PN532.h>
 #include <HTTPClient.h>
 #include <Ticker.h>
@@ -12,6 +14,12 @@
 #include <set>
 #include <SD.h>
 #include "time.h"
+
+#include "mbedtls/aes.h"
+#include "Cipher.h"
+
+#include "dooranser.h"
+
 
 //  Functions
 
@@ -42,6 +50,11 @@ void printChipId();
 // // function that prints firmware version of PN532 card
 // // ##################################################################
 // void nfcPrintFirmware(Adafruit_PN532 nfc);
+
+// void watchDogRefresh();
+
+// void IRAM_ATTR watchDogInterrupt();
+
 
 // ##################################################################
 // connect to wifi

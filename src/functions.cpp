@@ -4,18 +4,24 @@ portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
 std::set<long> check_ids;
 std::set<long> ids;
 
+hw_timer_t * watchDogTimer = NULL;
+
+char * key = "q4t7w9z$C&F)J@NcRfUjXn2r5u8x/A%D";
+Cipher * cipher = new Cipher(key);
+
+
 // const char *ssid = "project_wifi";
 // const char *password = "12345678";
-const char *ssid = "OphirBZK";
-const char *password = "noop2802";
-// const char* ssid = "Rothsl";
-// const char* password = "Bana&nitzan";
+// const char *ssid = "OphirBZK";
+// const char *password = "noop2802";
+const char* ssid = "Rothsl";
+const char* password = "Bana&nitzan";
 
 uint64_t chipid = ESP.getEfuseMac();
 String port = "1231";
 
-String url_client = "http://192.168.1.69:" + port;
-// String url_client = "http://192.168.31.69:" + port;
+// String url_client = "http://192.168.1.69:" + port;
+String url_client = "http://192.168.68.108:" + port;
 // Global strings for file commands
 String Permitted_ID_LIST_file = "/list_data.txt";
 String LOG_file = "/log_data.txt";
@@ -30,6 +36,7 @@ void printChipId()
     Serial.println(chipids);                                                                       // print the chip ID
     Serial.printf("ESP32 Chip ID In HEX: %04X%08X\n", (uint16_t)(chipid >> 32), (uint32_t)chipid); // print the chip ID
 }
+
 
 // // ##################################################################
 // // function that prints firmware version of PN532 card
@@ -108,6 +115,7 @@ void IRAM_ATTR onWiFiEvent(WiFiEvent_t event)
 void sendGETList()
 {
     Serial.println("Send HTTP GET request");
+    // cipher->setKey(key);
     // Send HTTP GET request
     HTTPClient http;
     http.begin(url_client + "/GETLIST");
@@ -119,7 +127,8 @@ void sendGETList()
     {
 
         String res = http.getString();
-        String save_res = res;
+        // String save_res = res;
+        String save_res = cipher->encryptString(res);
         // Parse JSON response max of about 1000 people per door
         DynamicJsonDocument doc(32768);
         DeserializationError error = deserializeJson(doc, res);
@@ -189,14 +198,18 @@ void sendPOSTRequest()
 
 void LoadFileToIDSet()
 {
-
     File file = SD.open(Permitted_ID_LIST_file, FILE_READ);
+    String decryptBufferfill;
     if (file)
     {
+        
+
         DynamicJsonDocument doc(32768);
 
-        DeserializationError error = deserializeJson(doc, file);
+        
 
+        DeserializationError error = deserializeJson(doc, file);
+        decryptBufferfill = cipher->decryptString(doc.as<String>());
         if (error)
         {
             Serial.print("deserializeJson() failed: ");
@@ -285,3 +298,5 @@ void check_make_file(String file_name)
     }
 }
 // *************************************************************************************
+
+
