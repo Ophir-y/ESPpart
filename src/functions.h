@@ -21,6 +21,9 @@
 #include "dooranser.h"
 
 
+// Define the maximum number of IDs the door can store
+#define MAX_IDS 1000
+
 //  Functions
 
 extern portMUX_TYPE timerMux;
@@ -38,8 +41,19 @@ extern uint64_t chipid;
 extern String Permitted_ID_LIST_file;
 extern String LOG_file;
 
-extern std::set<long> check_ids;
-extern std::set<long> ids;
+// extern std::set<long> check_ids;
+// extern std::set<long> ids;
+
+// Define the structure to hold ID data
+struct idData {
+  int id;
+  int startTime;
+  int endTime;
+};
+
+// Define the array to hold ID data
+extern idData ids[MAX_IDS];
+extern idData check_ids[MAX_IDS];
 
 // ##################################################################
 // print chips id
@@ -89,4 +103,8 @@ void SendGetTime();
 void check_make_file(String file_name);
 // **********************************************************************************
 void LoadFileToIDSet();
+// Check if an ID is approved based on the current time
+bool isApproved(int id);
+
+int convertTimeToInt(const char* timeStr);
 #endif

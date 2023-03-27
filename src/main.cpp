@@ -78,11 +78,12 @@ void setup()
   // timerAttachInterrupt(watchDogTimer, &watchDogInterrupt, true);
   // timerAlarmWrite(watchDogTimer, WATCHDOG_TIMEOUT_S * 1000000, false);
   // timerAlarmEnable(watchDogTimer);
-  esp_task_wdt_init(WATCHDOG_TIMEOUT_S, true);
+  // esp_task_wdt_init(WATCHDOG_TIMEOUT_S, true);
 
 
   // Check if admittance_list.txt exists, and create it if it doesn't
   check_make_file(Permitted_ID_LIST_file);
+
   check_make_file(LOG_file);
 
   // ##################################################################
@@ -133,7 +134,7 @@ esp_err_t esp_task_wdt_reset_user(TrigerRfid());
   { // Card was presented
     String message = String(id);
     // long idl = (long)id;
-    if (ids.find(id) != ids.end())
+    if (isApproved(id))
     {
       message += " Approved";
       Serial.println(message);

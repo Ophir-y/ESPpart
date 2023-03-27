@@ -1,13 +1,29 @@
 #include "functions.h"
 portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
 
-std::set<long> check_ids;
-std::set<long> ids;
+// std::set<long> check_ids;
+// std::set<long> ids;
+
+// // Define the maximum number of IDs the door can store
+// #define MAX_IDS 1000
+
+
+// Define the array to hold ID data
+idData ids[MAX_IDS];
+idData check_ids[MAX_IDS];
+
+// Define the number of IDs currently stored
+int numIds = 0;
+
 
 hw_timer_t * watchDogTimer = NULL;
 
 char * key = "q4t7w9z$C&F)J@NcRfUjXn2r5u8x/A%D";
 Cipher * cipher = new Cipher(key);
+
+
+int tocheckid = 0;
+int tocheckid_d =0;
 
 
 // const char *ssid = "project_wifi";
@@ -112,6 +128,66 @@ void IRAM_ATTR onWiFiEvent(WiFiEvent_t event)
 // ##################################################################
 // Get ID list request
 // ##################################################################
+
+// void sendGETList()
+// {
+//     Serial.println("Send HTTP GET request");
+//     // cipher->setKey(key);
+//     // Send HTTP GET request
+//     HTTPClient http;
+//     http.begin(url_client + "/GETLIST");
+//     http.addHeader("X-Custom-ID", String(chipid));
+//     // Serial.println(url_client);
+//     int httpCode = http.GET();
+//     if (httpCode == 200)
+//     {
+//         String res = http.getString();
+//         // String save_res = res;
+//         String save_res = cipher->encryptString(res);
+//         // Parse JSON response max of about 1000 people per door
+//         DynamicJsonDocument doc(32768);
+//         DeserializationError error = deserializeJson(doc, res);
+//         if (error)
+//         {
+//             // Failed to parse JSON
+//             Serial.println("Failed to parse JSON!");
+//             return;
+//         }
+//         for (JsonVariant row : doc.as<JsonArray>())
+//         {
+//             check_ids.insert(row["person_id"].as<long>());
+//         }
+//         // only open and write a new file if the recived list is different from list on board.
+//         if (ids != check_ids)
+//         {
+//             ids = check_ids;
+//             // Save response to file
+//             File file = SD.open(Permitted_ID_LIST_file, FILE_WRITE);
+//             if (!file)
+//             {
+//                 Serial.println("Error opening file");
+//             }
+//             else
+//             {
+//                 file.println(save_res);
+//                 file.close();
+//                 Serial.println("File saved");
+//                 Serial.println("GET was successful");
+//             }
+//         }
+//         else
+//         {
+//             Serial.println("No change in list");
+//         }
+//     }
+//     else
+//     {
+//         // Other error occurred
+//         Serial.println("Error sending GET request");
+//     }
+//     http.end();
+// }
+
 void sendGETList()
 {
     Serial.println("Send HTTP GET request");
@@ -122,10 +198,9 @@ void sendGETList()
     http.addHeader("X-Custom-ID", String(chipid));
     // Serial.println(url_client);
     int httpCode = http.GET();
-
+    int i, check;
     if (httpCode == 200)
     {
-
         String res = http.getString();
         // String save_res = res;
         String save_res = cipher->encryptString(res);
@@ -138,14 +213,43 @@ void sendGETList()
             Serial.println("Failed to parse JSON!");
             return;
         }
-        for (JsonVariant row : doc.as<JsonArray>())
+        numIds = 0;
+        for (JsonVariant object : doc.as<JsonArray>())
         {
-            check_ids.insert(row["person_id"].as<long>());
+            int id = object["person_id"];
+            int startTime = convertTimeToInt(object["start_time"]);
+            int endTime = convertTimeToInt(object["end_time"]);
+
+            // Add the ID data to the array
+            check_ids[numIds].id = id;
+            check_ids[numIds].startTime = startTime;
+            check_ids[numIds].endTime = endTime;
+            // Increment the number of IDs stored
+            numIds++;
+            
+      
+            // Check if the maximum number of IDs has been reached
+            if (numIds >= MAX_IDS) {
+                break;
+            }
         }
         // only open and write a new file if the recived list is different from list on board.
-        if (ids != check_ids)
+        for(i=0;i<numIds;i++){
+            if (ids[i].id==check_ids[i].id && ids[i].startTime==check_ids[i].startTime && ids[i].endTime==check_ids[i].endTime)
+            {
+                check=0;
+            }
+            else{
+                for(i;i<numIds;i++){
+                    ids[i].id= check_ids[i].id;
+                    ids[i].startTime= check_ids[i].startTime;
+                    ids[i].endTime= check_ids[i].endTime;
+                }
+                check=1;
+            }         
+        }
+        if (check == 1)
         {
-            ids = check_ids;
             // Save response to file
             File file = SD.open(Permitted_ID_LIST_file, FILE_WRITE);
             if (!file)
@@ -163,6 +267,8 @@ void sendGETList()
         else
         {
             Serial.println("No change in list");
+            tocheckid++;
+            Serial.println(" ");
         }
     }
     else
@@ -170,9 +276,26 @@ void sendGETList()
         // Other error occurred
         Serial.println("Error sending GET request");
     }
-
     http.end();
+
+    // This part is because my PN532 is not working
+    //####################################################
+    
+    if(tocheckid == 2){
+        tocheckid=0;
+        if(isApproved(ids[tocheckid_d].id)){
+            Serial.printf("id %d is Approved",ids[tocheckid_d].id);
+            Serial.println("");
+        }
+        else{
+          Serial.printf("id %d is Declined",ids[tocheckid_d].id);  
+          Serial.println("");
+        }
+        tocheckid_d++;
+    }
+    //##############################################
 }
+
 // **********************************************************************************
 
 // ##################################################################
@@ -196,32 +319,72 @@ void sendPOSTRequest()
 // load data from file to the ids set
 // ##################################################################
 
-void LoadFileToIDSet()
-{
-    File file = SD.open(Permitted_ID_LIST_file, FILE_READ);
-    String decryptBufferfill;
-    if (file)
-    {
-        
+// void LoadFileToIDSet()
+// {
+//     File file = SD.open(Permitted_ID_LIST_file, FILE_READ);
+//     String decryptBufferfill;
+//     if (file)
+//     {
+//         DynamicJsonDocument doc(32768);
+//         DeserializationError error = deserializeJson(doc, file);
+//         decryptBufferfill = cipher->decryptString(doc.as<String>());
+//         if (error)
+//         {
+//             Serial.print("deserializeJson() failed: ");
+//             Serial.println(error.c_str());
+//             return;
+//         }
+//         for (JsonVariant item : doc.as<JsonArray>())
+//         {
+//             ids.insert(item["person_id"].as<long>());
+//         }
+//         file.close();
+//     }
+// }
 
-        DynamicJsonDocument doc(32768);
+void LoadFileToIDSet() {
+  // Open the data file
+  File file = SD.open(Permitted_ID_LIST_file, FILE_READ);
+  String decryptfillAsString;
+  // Check if the file opened successfully
+  if (file) {
+    // Parse the JSON data
+    DynamicJsonDocument doc(32768);
+    decryptfillAsString = cipher->decryptString(file.readString());
+    DeserializationError error = deserializeJson(doc, decryptfillAsString);
 
-        
-
-        DeserializationError error = deserializeJson(doc, file);
-        decryptBufferfill = cipher->decryptString(doc.as<String>());
         if (error)
         {
-            Serial.print("deserializeJson() failed: ");
-            Serial.println(error.c_str());
+            // Failed to parse JSON
+            Serial.println("Failed to parse JSON!");
             return;
         }
-        for (JsonVariant item : doc.as<JsonArray>())
-        {
-            ids.insert(item["person_id"].as<long>());
-        }
-        file.close();
+    // deserializeJson(doc, file);
+
+    // Extract the ID data
+    numIds = 0;
+    for (JsonVariant value : doc.as<JsonArray>()) {
+      int id = value["person_id"];
+      int startTime = value["start_time"];
+      int endTime = value["end_time"];
+      
+      // Add the ID data to the array
+      ids[numIds].id = id;
+      ids[numIds].startTime = startTime;
+      ids[numIds].endTime = endTime;
+      
+      // Increment the number of IDs stored
+      numIds++;
+      
+      // Check if the maximum number of IDs has been reached
+      if (numIds >= MAX_IDS) {
+        break;
+      }
     }
+    
+    // Close the file
+    file.close();
+  }
 }
 
 // ##################################################################
@@ -299,4 +462,59 @@ void check_make_file(String file_name)
 }
 // *************************************************************************************
 
+// Check if an ID is approved based on the current time
+bool isApproved(int id) {
+    time_t now = time(nullptr);
+    struct tm *timeinfo;
+    timeinfo = localtime(&now);
+    char buf[16];
+    // strftime(buf, sizeof(buf), "%H:%M", timeinfo);
+    Serial.println(buf);
 
+    int hour = timeinfo->tm_hour;
+    int minute = timeinfo->tm_min;
+    int currentTime = hour*60 +minute;
+
+
+  // Get the current time as a time_t value
+
+  // Loop through the ID data array and check if the ID is approved
+  for (int i = 0; i < numIds; i++) {
+
+    // Check if the ID matches
+    if (ids[i].id == id) {
+
+      // Check if the current time is between the start and end times
+      if (currentTime >= ids[i].startTime && currentTime <= ids[i].endTime) {
+        return true;
+      }
+    //   else {
+    //     return false;
+    //   }
+    }
+
+  }
+
+  // If the ID was not found, return false
+  return false;
+}
+
+
+int convertTimeToInt(const char* timeStr) {
+  // copy the time string to a mutable buffer
+  char buffer[strlen(timeStr) + 1];
+  strcpy(buffer, timeStr);
+
+  // split the time string into separate hours and minutes strings
+  char* hoursStr = strtok(buffer, ":");
+  char* minutesStr = strtok(NULL, ":");
+
+  // convert the hours and minutes strings to integer values
+  int hours = atoi(hoursStr);
+  int minutes = atoi(minutesStr);
+
+  // convert the time to an integer value in minutes
+  int timeInMinutes = hours * 60 + minutes;
+
+  return timeInMinutes;
+}
