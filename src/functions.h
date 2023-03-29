@@ -6,6 +6,7 @@
 #include <SPI.h>
 #include <esp_task_wdt.h>
 #include <sdkconfig.h>
+#include <iostream>
 // #include <Adafruit_PN532.h>
 #include <HTTPClient.h>
 #include <Ticker.h>
@@ -107,4 +108,9 @@ void LoadFileToIDSet();
 bool isApproved(int id);
 
 int convertTimeToInt(const char* timeStr);
+
+void saveinlog(String isApproved, int id);
+
+String LoadFail(String whichfile);
+
 #endif

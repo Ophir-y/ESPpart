@@ -217,6 +217,7 @@ void sendGETList()
         for (JsonVariant object : doc.as<JsonArray>())
         {
             int id = object["person_id"];
+            // convert Time from hh:mm to an Int hh*60+mm
             int startTime = convertTimeToInt(object["start_time"]);
             int endTime = convertTimeToInt(object["end_time"]);
 
@@ -226,8 +227,6 @@ void sendGETList()
             check_ids[numIds].endTime = endTime;
             // Increment the number of IDs stored
             numIds++;
-            
-      
             // Check if the maximum number of IDs has been reached
             if (numIds >= MAX_IDS) {
                 break;
@@ -235,6 +234,12 @@ void sendGETList()
         }
         // only open and write a new file if the recived list is different from list on board.
         for(i=0;i<numIds;i++){
+            // Serial.printf("ids[%d].id is: %d",i,ids[i].id);
+            // Serial.print(" ");
+            // Serial.printf(" startTime is: %d",ids[i].startTime);
+            // Serial.print(" ");
+            // Serial.printf(" endTime is: %d",ids[i].endTime);
+            // Serial.println(" ");
             if (ids[i].id==check_ids[i].id && ids[i].startTime==check_ids[i].startTime && ids[i].endTime==check_ids[i].endTime)
             {
                 check=0;
@@ -244,6 +249,12 @@ void sendGETList()
                     ids[i].id= check_ids[i].id;
                     ids[i].startTime= check_ids[i].startTime;
                     ids[i].endTime= check_ids[i].endTime;
+                    // Serial.printf("ids[%d].id is: %d",i,ids[i].id);
+                    // Serial.print(" ");
+                    // Serial.printf(" startTime is: %d",ids[i].startTime);
+                    // Serial.print(" ");
+                    // Serial.printf(" endTime is: %d",ids[i].endTime);
+                    // Serial.println(" ");
                 }
                 check=1;
             }         
@@ -343,14 +354,15 @@ void sendPOSTRequest()
 // }
 
 void LoadFileToIDSet() {
-  // Open the data file
-  File file = SD.open(Permitted_ID_LIST_file, FILE_READ);
+//   // Open the data file
+//   File file = SD.open(Permitted_ID_LIST_file, FILE_READ);
   String decryptfillAsString;
-  // Check if the file opened successfully
-  if (file) {
+//   // Check if the file opened successfully
+//   if (file) {
     // Parse the JSON data
     DynamicJsonDocument doc(32768);
-    decryptfillAsString = cipher->decryptString(file.readString());
+//     decryptfillAsString = cipher->decryptString(file.readString());
+    decryptfillAsString = LoadFail(Permitted_ID_LIST_file);
     DeserializationError error = deserializeJson(doc, decryptfillAsString);
 
         if (error)
@@ -382,9 +394,9 @@ void LoadFileToIDSet() {
       }
     }
     
-    // Close the file
-    file.close();
-  }
+    // // Close the file
+    // file.close();
+//   }
 }
 
 // ##################################################################
@@ -468,14 +480,12 @@ bool isApproved(int id) {
     struct tm *timeinfo;
     timeinfo = localtime(&now);
     char buf[16];
-    // strftime(buf, sizeof(buf), "%H:%M", timeinfo);
-    Serial.println(buf);
+    strftime(buf, sizeof(buf), "%H:%M", timeinfo);
+    // Serial.println(buf);
 
     int hour = timeinfo->tm_hour;
     int minute = timeinfo->tm_min;
     int currentTime = hour*60 +minute;
-
-
   // Get the current time as a time_t value
 
   // Loop through the ID data array and check if the ID is approved
@@ -494,7 +504,6 @@ bool isApproved(int id) {
     }
 
   }
-
   // If the ID was not found, return false
   return false;
 }
@@ -517,4 +526,61 @@ int convertTimeToInt(const char* timeStr) {
   int timeInMinutes = hours * 60 + minutes;
 
   return timeInMinutes;
+}
+
+
+void saveinlog(String isApproved, int id){
+    time_t now = time(nullptr);
+    struct tm *timeinfo;
+    timeinfo = localtime(&now);
+    String TIS = asctime(timeinfo);
+    String OldLog = LoadFail(LOG_file);
+    char str[8];
+    sprintf(str,"%d", id);
+    String theid =str;
+    String yn;
+    if(isApproved == "Approved"){
+        yn = "yes";
+    }
+    else{
+        yn = "no";
+    }
+    String tii = "the id is: ";
+    String tti = "the time is: ";
+    String IA = "is Approved: ";
+    String newLog = OldLog + tii + theid + tti + TIS + IA + yn;
+    String save_res = cipher->encryptString(newLog);
+    File file = SD.open(LOG_file, FILE_WRITE);
+            if (!file)
+            {
+                Serial.println("Error opening file");
+            }
+            else
+            {
+                file.println(save_res);
+                file.close();
+                Serial.println("File saved");
+                Serial.println("GET was successful");
+            }
+}
+
+String LoadFail(String whichfile){
+    File file = SD.open(whichfile, FILE_READ);
+    String decryptfillAsString;
+    // Check if the file opened successfully
+    if (file) {
+        // Parse the JSON data
+        DynamicJsonDocument doc(32768);
+        decryptfillAsString = cipher->decryptString(file.readString());
+        file.close();
+        return decryptfillAsString;
+    }
+    else
+    {
+        // Failed to parse JSON
+        Serial.printf("Failed to get the %s from the sd \n",whichfile);
+        file.close();
+        return "error";
+    }
+
 }

@@ -134,9 +134,11 @@ esp_err_t esp_task_wdt_reset_user(TrigerRfid());
   { // Card was presented
     String message = String(id);
     // long idl = (long)id;
+    String isApprov;
     if (isApproved(id))
     {
-      message += " Approved";
+      isApprov = "Approved";
+      message += " " + isApprov;
       Serial.println(message);
       digitalWrite(GREEN_LED, HIGH);
       for (int i = 0; i < 200; i++)
@@ -152,7 +154,9 @@ esp_err_t esp_task_wdt_reset_user(TrigerRfid());
     }
     else
     {
-      message += " Declined";
+      isApprov = "Declined";
+      message += " " isApprov;
+
       Serial.println(message);
       digitalWrite(RED_LED, HIGH);
       for (int i = 0; i < 200; i++)
