@@ -18,8 +18,6 @@
 
 #define WATCHDOG_TIMEOUT_S 3
 
-
-
 // Adafruit_PN532 nfc(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS);
 Desfire nfc_PN532;
 String idcard;
@@ -30,8 +28,6 @@ AES nfc_PiccMasterKey; // An authentication key for the given cards. Defined in 
 bool initSuccess = false;
 uint64_t lastId = 0;
 int keep_alive_counter = 0;
-
-
 
 SPIClass hspi(HSPI);
 
@@ -69,9 +65,8 @@ void setup()
     Serial.println("Error initializing SD card.");
   }
 
-
   // // ##################################################################
-  // // watchDogTimer 
+  // // watchDogTimer
   // // ##################################################################
 
   // watchDogTimer = timerBegin(2, 80, true);
@@ -79,7 +74,6 @@ void setup()
   // timerAlarmWrite(watchDogTimer, WATCHDOG_TIMEOUT_S * 1000000, false);
   // timerAlarmEnable(watchDogTimer);
   // esp_task_wdt_init(WATCHDOG_TIMEOUT_S, true);
-
 
   // Check if admittance_list.txt exists, and create it if it doesn't
   check_make_file(Permitted_ID_LIST_file);
@@ -110,9 +104,6 @@ void setup()
   // get the real time
   SendGetTime();
 
-
-
-
   delay(1000);
   time_t now = time(NULL);
   Serial.println(ctime(&now));
@@ -120,11 +111,11 @@ void setup()
 
 void loop()
 {
-esp_err_t esp_task_wdt_reset_user(TrigerRfid());
+  // esp_err_t esp_task_wdt_reset_user(TrigerRfid());
 
   long id = TrigerRfid();
-  esp_err_t esp_task_wdt_delete_user(TrigerRfid());
-    if (id < 0)
+  // esp_err_t esp_task_wdt_delete_user(TrigerRfid());
+  if (id < 0)
   {
 
     keep_alive_counter += 20;
@@ -155,7 +146,7 @@ esp_err_t esp_task_wdt_reset_user(TrigerRfid());
     else
     {
       isApprov = "Declined";
-      message += " " isApprov;
+      message += " " + isApprov;
 
       Serial.println(message);
       digitalWrite(RED_LED, HIGH);

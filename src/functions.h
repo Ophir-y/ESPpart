@@ -21,7 +21,6 @@
 
 #include "dooranser.h"
 
-
 // Define the maximum number of IDs the door can store
 #define MAX_IDS 1000
 
@@ -46,10 +45,11 @@ extern String LOG_file;
 // extern std::set<long> ids;
 
 // Define the structure to hold ID data
-struct idData {
-  int id;
-  int startTime;
-  int endTime;
+struct idData
+{
+    int id;
+    int startTime;
+    int endTime;
 };
 
 // Define the array to hold ID data
@@ -69,7 +69,6 @@ void printChipId();
 // void watchDogRefresh();
 
 // void IRAM_ATTR watchDogInterrupt();
-
 
 // ##################################################################
 // connect to wifi
@@ -103,14 +102,14 @@ void SendGetTime();
 // ##################################################################
 void check_make_file(String file_name);
 // **********************************************************************************
-void LoadFileToIDSet();
+void ReadFileToIDSet();
 // Check if an ID is approved based on the current time
 bool isApproved(int id);
 
-int convertTimeToInt(const char* timeStr);
+int convertTimeToInt(const char *timeStr);
 
 void saveinlog(String isApproved, int id);
 
-String LoadFail(String whichfile);
+String ReadFile(String whichfile);
 
 #endif
