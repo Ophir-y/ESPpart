@@ -10,8 +10,10 @@
 #include <ArduinoJson.h>
 #include "adafruit.h"
 #include <set>
+#include <vector>
 #include <SD.h>
 #include "time.h"
+#include "Classes.h"
 
 //  Functions
 
@@ -30,8 +32,8 @@ extern uint64_t chipid;
 extern String Permitted_ID_LIST_file;
 extern String LOG_file;
 
-extern std::set<long> check_ids;
-extern std::set<long> ids;
+extern std::unique_ptr<AllowedID> check_ids;
+extern std::unique_ptr<AllowedID> ids;
 
 // ##################################################################
 // print chips id

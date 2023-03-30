@@ -1,8 +1,8 @@
 #include "functions.h"
 portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
 
-std::set<long> check_ids;
-std::set<long> ids;
+std::unique_ptr<AllowedID> check_ids;
+std::unique_ptr<AllowedID> ids;
 
 // const char *ssid = "project_wifi";
 // const char *password = "12345678";

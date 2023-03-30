@@ -35,6 +35,11 @@ void setup()
   pinMode(BUZZER, OUTPUT);
   pinMode(GREEN_LED, OUTPUT);
   pinMode(RED_LED, OUTPUT);
+  // // ##################################################################
+  // // Set time to israel time
+  // // ##################################################################
+  // setenv("TZ", "Israel", 1);
+  // tzset();
   // ##################################################################
   // Print ESP32 ID
   // ##################################################################
@@ -114,6 +119,7 @@ void loop()
     {
       message += " Approved";
       Serial.println(message);
+      printLocalTime();
       digitalWrite(GREEN_LED, HIGH);
       for (int i = 0; i < 200; i++)
       {
