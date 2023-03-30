@@ -4,6 +4,9 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <SPI.h>
+#include <esp_task_wdt.h>
+#include <sdkconfig.h>
+#include <iostream>
 // #include <Adafruit_PN532.h>
 #include <HTTPClient.h>
 #include <Ticker.h>
@@ -12,6 +15,15 @@
 #include <set>
 #include <SD.h>
 #include "time.h"
+
+#include "mbedtls/aes.h"
+#include "Cipher.h"
+
+#include "dooranser.h"
+
+
+// Define the maximum number of IDs the door can store
+#define MAX_IDS 1000
 
 //  Functions
 
@@ -30,8 +42,19 @@ extern uint64_t chipid;
 extern String Permitted_ID_LIST_file;
 extern String LOG_file;
 
-extern std::set<long> check_ids;
-extern std::set<long> ids;
+// extern std::set<long> check_ids;
+// extern std::set<long> ids;
+
+// Define the structure to hold ID data
+struct idData {
+  int id;
+  int startTime;
+  int endTime;
+};
+
+// Define the array to hold ID data
+extern idData ids[MAX_IDS];
+extern idData check_ids[MAX_IDS];
 
 // ##################################################################
 // print chips id
@@ -42,6 +65,11 @@ void printChipId();
 // // function that prints firmware version of PN532 card
 // // ##################################################################
 // void nfcPrintFirmware(Adafruit_PN532 nfc);
+
+// void watchDogRefresh();
+
+// void IRAM_ATTR watchDogInterrupt();
+
 
 // ##################################################################
 // connect to wifi
@@ -76,4 +104,13 @@ void SendGetTime();
 void check_make_file(String file_name);
 // **********************************************************************************
 void LoadFileToIDSet();
+// Check if an ID is approved based on the current time
+bool isApproved(int id);
+
+int convertTimeToInt(const char* timeStr);
+
+void saveinlog(String isApproved, int id);
+
+String LoadFail(String whichfile);
+
 #endif
