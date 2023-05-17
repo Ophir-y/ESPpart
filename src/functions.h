@@ -4,7 +4,7 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <SPI.h>
-#include <esp_task_wdt.h>
+// #include <esp_task_wdt.h>
 #include <sdkconfig.h>
 #include <iostream>
 // #include <Adafruit_PN532.h>
@@ -102,7 +102,7 @@ void SendGetTime();
 // ##################################################################
 void check_make_file(String file_name);
 // **********************************************************************************
-void ReadFileToIDSet();
+void LoadFileToIDSet();
 // Check if an ID is approved based on the current time
 bool isApproved(int id);
 

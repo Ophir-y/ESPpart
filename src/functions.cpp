@@ -30,10 +30,10 @@ const char *password = "noop2802";
 // const char* password = "Bana&nitzan";
 
 uint64_t chipid = ESP.getEfuseMac();
-String port = "1231";
-
-String url_client = "http://192.168.1.69:" + port;
-// String url_client = "http://192.168.68.108:" + port;
+// String port = "1231";
+String port = "1500";
+String url_client = "https://192.168.1.78:" + port;
+// String url_client = "https://192.168.68.108:" + port;
 // Global strings for file commands
 String Permitted_ID_LIST_file = "/list_data.txt";
 String LOG_file = "/log_data.txt";

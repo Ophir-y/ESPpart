@@ -1,9 +1,9 @@
 #include "functions.h"
 
 // ########   SPI for PN532:
-// #define PN532_SCK (18)
-// #define PN532_MISO (19)
-// #define PN532_MOSI (23)
+#define PN532_SCK (18)
+#define PN532_MISO (19)
+#define PN532_MOSI (23)
 #define PN532_SS (4) //
 
 // ########   SPI for SD reader:
@@ -16,7 +16,7 @@
 #define GREEN_LED (33)
 #define RED_LED (32)
 
-#define WATCHDOG_TIMEOUT_S 3
+// #define WATCHDOG_TIMEOUT_S 3
 
 // Adafruit_PN532 nfc(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS);
 Desfire nfc_PN532;
@@ -53,7 +53,12 @@ void setup()
   // ##################################################################
   // connect to PN532 via SPI
   // ##################################################################
-  nfc_PN532.InitHardwareSPI(SPI_CS_PIN, RESET_PIN);
+  // nfc_PN532.InitHardwareSPI(SPI_CS_PIN, RESET_PIN);
+  // (byte u8_Clk, byte u8_Miso, byte u8_Mosi, byte u8_Sel, byte u8_Reset)
+  nfc_PN532.InitSoftwareSPI(PN532_SCK, PN532_MISO, PN532_MOSI, SPI_CS_PIN, RESET_PIN);
+  nfc_PN532.begin();
+
+  delay(50);
 
   // ##################################################################
   // initialize the SD card
@@ -64,7 +69,7 @@ void setup()
   {
     Serial.println("Error initializing SD card.");
   }
-
+  delay(50);
   // // ##################################################################
   // // watchDogTimer
   // // ##################################################################
@@ -111,14 +116,11 @@ void setup()
 
 void loop()
 {
-  // esp_err_t esp_task_wdt_reset_user(TrigerRfid());
 
   long id = TrigerRfid();
-  // esp_err_t esp_task_wdt_delete_user(TrigerRfid());
+
   if (id < 0)
   {
-
-    keep_alive_counter += 20;
     return; // Failure
   }
   else if (id > 0)
@@ -140,7 +142,7 @@ void loop()
         delay(1); // wait for 1ms
       }
       digitalWrite(GREEN_LED, LOW);
-      delay(2500);
+      delay(100);
       return;
     }
     else
@@ -158,7 +160,7 @@ void loop()
         delay(1); // wait for 1ms
       }
       digitalWrite(RED_LED, LOW);
-      delay(2000);
+      delay(100);
       return;
     }
   }
